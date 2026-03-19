@@ -1,0 +1,10 @@
+# Kur'an Kavram Atlası - Backend Veri İşleme Gereksinimleri
+# Bu kütüphaneler sadece /scripts klasöründeki Python dosyalarını 
+# çalıştırarak verileri sıfırdan üretmek isteyen geliştiriciler içindir.
+# (HTML arayüzünü çalıştırmak için bu kütüphanelere gerek yoktur.)
+
+numpy>=1.24.0
+scikit-learn>=1.2.0
+umap-learn>=0.5.5
+google-genai>=0.2.0
+python-dotenv>=1.0.0

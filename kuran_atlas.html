@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kur'an Kavram Atlası — Semantik Okuyucu</title>
+  <meta name="description"
+    content="Kur'an'daki kavram köklerinin semantik ilişki haritası. Yapay zeka destekli anlam analizi." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Amiri&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --border-glass: rgba(255, 255, 255, 0.08);
+      --text-primary: #e5e7eb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-gold: #f59e0b;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --radius-lg: 16px;
+      --radius-md: 10px;
+      --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.5);
+      --clr-es-anlamlilik: #10b981;
+      --clr-ayrilmaz-butunluk: #3b82f6;
+      --clr-zitlik: #ef4444;
+      --clr-somutlastirma: #8b5cf6;
+      --clr-hiyerarsi: #f97316;
+      --clr-sebep-sonuc: #06b6d4;
+      --clr-sart-bagimlilik: #eab308;
+      --clr-sifat-niteleme: #ec4899;
+      --clr-aksiyon-eylem: #14b8a6;
+      --clr-kissa-tarih: #a78bfa;
+      --clr-iliski-yok: #4b5563;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── LANDING (search-first) ── */
+    #landing {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+      transition: opacity 0.4s;
+    }
+
+    #landing.hidden {
+      display: none;
+    }
+
+    #landing h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent-gold);
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    #landing p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    .search-box {
+      position: relative;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 14px 18px 14px 44px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+    }
+
+    .search-box .icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    .search-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-md);
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+      z-index: 50;
+    }
+
+    .search-dropdown .item {
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border-glass);
+      transition: background 0.15s;
+    }
+
+    .search-dropdown .item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .search-dropdown .item .code {
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    .search-dropdown .item .meaning {
+      color: var(--text-secondary);
+      margin-left: 8px;
+    }
+
+    /* ── READER VIEW ── */
+    #reader {
+      display: none;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 30px 20px 60px;
+    }
+
+    #reader.active {
+      display: block;
+    }
+
+    /* Top bar in reader */
+    .reader-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .reader-header .back-btn {
+      background: none;
+      border: 1px solid var(--border-glass);
+      color: var(--text-secondary);
+      font-size: 18px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .reader-header .back-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .reader-header .search-box {
+      flex: 1;
+    }
+
+    /* Concept card */
+    .concept-card {
+      text-align: center;
+      padding: 30px 20px;
+      margin-bottom: 30px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+    }
+
+    .concept-card .arabic {
+      font-family: 'Amiri', serif;
+      font-size: 48px;
+      color: var(--accent-gold);
+      direction: rtl;
+    }
+
+    .concept-card .root-code {
+      font-size: 16px;
+      color: var(--accent-cyan);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .concept-card .meanings {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .concept-card .stats {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 16px;
+    }
+
+    .concept-card .stat {
+      text-align: center;
+    }
+
+    .concept-card .stat .val {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-gold);
+    }
+
+    .concept-card .stat .lbl {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    /* Group sections */
+    .group-section {
+      margin-bottom: 24px;
+    }
+
+    .group-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-glass);
+      margin-bottom: 12px;
+    }
+
+    .group-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Connection card */
+    .connection-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .connection-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      transform: translateX(4px);
+    }
+
+    .connection-card .top-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .connection-card .neighbor-arabic {
+      font-family: 'Amiri', serif;
+      font-size: 22px;
+      color: var(--accent-gold);
+      direction: rtl;
+    }
+
+    .connection-card .neighbor-code {
+      font-size: 13px;
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    .connection-card .neighbor-meaning {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .connection-card .reason {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      font-style: italic;
+      opacity: 0.9;
+    }
+
+    .connection-card .meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .connection-card .badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .connection-card .score-info {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Shared ayets */
+    .shared-ayets {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    }
+
+    .shared-ayets .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .ayet-chip {
+      display: inline-block;
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid rgba(6, 182, 212, 0.15);
+      border-radius: 6px;
+      padding: 6px 10px;
+      margin: 3px 4px 3px 0;
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      max-width: 100%;
+    }
+
+    .ayet-chip .ref {
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    /* All connections link */
+    .all-connections-link {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .all-connections-link button {
+      background: none;
+      border: 1px solid var(--border-glass);
+      color: var(--text-secondary);
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .all-connections-link button:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+    }
+
+    /* ── FULL VIEW (All Connections) ── */
+    .full-view-header {
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-glass);
+    }
+    .full-view-header h2 {
+      font-size: 18px;
+      color: var(--accent-gold);
+      margin-bottom: 4px;
+    }
+    .full-view-header p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .ayet-item {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .ayet-ref {
+      font-weight: 600;
+      color: var(--accent-cyan);
+      font-size: 13px;
+    }
+
+    .full-connection-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .full-connection-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .full-connection-item .arabic {
+      font-family: 'Amiri', serif;
+      font-size: 20px;
+      color: var(--text-primary);
+      width: 80px;
+      text-align: right;
+      padding-right: 16px;
+    }
+    .full-connection-item .details {
+      flex: 1;
+    }
+    .full-connection-item .code {
+      font-weight: 600;
+      color: var(--accent-cyan);
+      font-size: 13px;
+    }
+    .full-connection-item .meaning {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-left: 8px;
+    }
+    
+    /* ── LOADING ── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      transition: opacity 0.5s;
+    }
+
+    #loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loader-ring {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #loading-text {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* ── MODE TABS ── */
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid var(--border-glass);
+    }
+    .mode-tab {
+      padding: 10px 32px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+    }
+    .mode-tab.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* ── JOURNEY MODE UI ── */
+    #journey-inputs {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .journey-action {
+      margin-top: 16px;
+      width: 100%;
+      background: var(--accent-cyan);
+      color: #000;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .journey-action:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+    .journey-action:disabled {
+      background: var(--border-glass);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    /* ── JOURNEY TIMELINE VIEW ── */
+    .timeline-container {
+      position: relative;
+      padding: 20px 0 40px;
+    }
+    .timeline-container::before {
+      content: '';
+      position: absolute;
+      left: 50px;
+      top: 40px;
+      bottom: 40px;
+      width: 2px;
+      background: var(--border-glass);
+      z-index: 0;
+    }
+    .waypoint {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    .waypoint-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 3px solid var(--accent-gold);
+      margin-left: 43px; /* 50px line - 7px offset */
+      flex-shrink: 0;
+    }
+    .waypoint-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      padding: 16px 24px;
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .waypoint-card .arabic {
+      font-family: 'Amiri', serif;
+      font-size: 28px;
+      color: var(--text-primary);
+      direction: rtl;
+    }
+    .waypoint-card .info {
+      text-align: left;
+    }
+    .route-edge {
+      position: relative;
+      z-index: 1;
+      margin: -10px 0 20px 80px;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.02);
+      border-left: 3px solid var(--text-muted);
+      max-width: calc(100% - 80px);
+    }
+    .route-edge .edge-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .route-edge .badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .route-edge .reason {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LOADING -->
+  <div id="loading-overlay">
+    <div class="loader-ring"></div>
+    <div id="loading-text">Veriler yükleniyor...</div>
+  </div>
+
+  <!-- LANDING (search-first) -->
+  <div id="landing">
+    <h1>Kur'an Kavram Atlası</h1>
+    <p>Semantik haritayı ve kavramsal yolculukları keşfedin</p>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="setAppMode('explore')" id="tab-explore">Kavram İncele</button>
+      <button class="mode-tab" onclick="setAppMode('journey')" id="tab-journey">Kavramsal Yolculuk</button>
+      <button class="mode-tab" onclick="setAppMode('ayet')" id="tab-ayet">Ayet İncele</button>
+    </div>
+
+    <!-- Mode 1: Explore -->
+    <div id="explore-inputs" class="search-box">
+      <span class="icon">⌕</span>
+      <input type="text" id="search-input" placeholder="Kavram ara... (ör: salat, sabır, zekat)" autocomplete="off" />
+      <div class="search-dropdown" id="search-dropdown"></div>
+    </div>
+
+    <!-- Mode 2: Journey -->
+    <div id="journey-inputs">
+      <div class="search-box">
+        <span class="icon">A</span>
+        <input type="text" id="journey-start" placeholder="Başlangıç kavramı..." autocomplete="off" />
+        <div class="search-dropdown" id="dropdown-start"></div>
+      </div>
+      <div class="search-box">
+        <span class="icon">B</span>
+        <input type="text" id="journey-end" placeholder="Hedef kavram..." autocomplete="off" />
+        <div class="search-dropdown" id="dropdown-end"></div>
+      </div>
+      <button class="journey-action" id="btn-find-path" disabled onclick="startJourney()">Yolculuğu Başlat</button>
+    </div>
+
+    <!-- Mode 3: Ayet Scanner -->
+    <div id="ayet-inputs" style="display:none; width:100%; max-width:520px;">
+      <div class="search-box">
+        <span class="icon">📖</span>
+        <input type="text" id="ayet-search-input" placeholder="Ayet ara (ör: 1:1, Bakara 255)..." autocomplete="off" />
+        <div class="search-dropdown" id="ayet-dropdown"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- READER VIEW -->
+  <div id="reader">
+    <div class="reader-header">
+      <button class="back-btn" id="reader-back" title="Ana sayfaya dön">←</button>
+      <div class="search-box">
+        <span class="icon">⌕</span>
+        <input type="text" id="reader-search-input" placeholder="Başka kavram ara..."
+          autocomplete="off" />
+        <div class="search-dropdown" id="reader-search-dropdown"></div>
+      </div>
+    </div>
+    <div id="reader-content"></div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    // CONFIGURATION
+    // ═══════════════════════════════════════════════════════════
+    const DATA_PATHS = {
+      kokIndex: './data_processed/kok_index.json',
+      relations: './semantics/semantic_relations.json',
+      ayetIndex: './data_processed/ayet_index.json'
+    };
+
+    const EDGE_COLORS = {
+      'Eş Anlamlılık': '#10b981',
+      'Ayrılmaz Bütünlük': '#3b82f6',
+      'Zıtlık': '#ef4444',
+      'Somutlaştırma': '#8b5cf6',
+      'Hiyerarşi (Alt-Üst)': '#f97316',
+      'Sebep-Sonuç': '#06b6d4',
+      'Şart-Bağımlılık': '#eab308',
+      'Sıfat/Niteleme': '#ec4899',
+      'Aksiyon/Eylem': '#14b8a6',
+      'Kıssa/Tarih': '#a78bfa',
+      'İlişki Yok': '#4b5563'
+    };
+
+    // Significance formula weights
+    const TYPE_BONUS = {
+      'Ayrılmaz Bütünlük': 1.0,
+      'Şart-Bağımlılık': 0.85,
+      'Sebep-Sonuç': 0.80,
+      'Eş Anlamlılık': 0.75,
+      'Zıtlık': 0.70,
+      'Sıfat/Niteleme': 0.60,
+      'Aksiyon/Eylem': 0.55,
+      'Somutlaştırma': 0.50,
+      'Hiyerarşi (Alt-Üst)': 0.45,
+      'Kıssa/Tarih': 0.30,
+      'İlişki Yok': 0.0
+    };
+
+    const MAX_DEFINING = 8;
+    const MAX_PER_TYPE = 3;
+    const MAX_NPMI = 0.90; // Dataset normalization ceiling
+    const MAX_RAW = 30;
+
+    // ═══════════════════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════════════════
+    let kokIndex = {};
+    let ayetIndex = {};
+    let allEdges = [];
+    let allNodeData = [];
+    let navigationHistory = [];
+
+    // ═══════════════════════════════════════════════════════════
+    // DATA LOADING
+    // ═══════════════════════════════════════════════════════════
+    async function loadAllData() {
+      const [kokResp, relResp, ayetResp] = await Promise.all([
+        fetch(DATA_PATHS.kokIndex).then(r => r.json()),
+        fetch(DATA_PATHS.relations).then(r => r.json()),
+        fetch(DATA_PATHS.ayetIndex).then(r => r.json())
+      ]);
+
+      kokIndex = kokResp;
+      allEdges = relResp.edges || [];
+      ayetIndex = ayetResp;
+
+      // Build node list for search
+      allNodeData = Object.entries(kokIndex).map(([id, data]) => ({
+        id,
+        arapca: data.arapca || '',
+        turkce: (data.turkce || []).slice(0, 5),
+        allTurkce: data.turkce || [],
+        frekans: data.frekans || 0,
+        ayetler: data.ayetler || []
+      }));
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // SIGNIFICANCE ALGORITHM
+    // ═══════════════════════════════════════════════════════════
+    function calculateSignificance(edge) {
+      const npmiNorm = Math.min((edge.npmi || 0) / MAX_NPMI, 1.0);
+      const countNorm = Math.min((edge.raw_count || 0), MAX_RAW) / MAX_RAW;
+      const typeBonus = TYPE_BONUS[edge.type] || 0.3;
+
+      return ((edge.score || 0.5) * 0.35) +
+             (npmiNorm * 0.35) +
+             (countNorm * 0.15) +
+             (typeBonus * 0.15);
+    }
+
+    function selectDefiningConnections(nodeId) {
+      // 1. Find all edges for this node
+      const edges = allEdges.filter(e => {
+        const s = e.source;
+        const t = e.target;
+        return s === nodeId || t === nodeId;
+      });
+
+      // 2. Filter out "İlişki Yok"
+      const validEdges = edges.filter(e => e.type !== 'İlişki Yok');
+
+      // 3. Calculate significance for each edge
+      const scored = validEdges.map(e => {
+        const significance = calculateSignificance(e);
+        const neighborId = e.source === nodeId ? e.target : e.source;
+        return { ...e, significance, neighborId };
+      });
+
+      // 4. Sort by significance descending
+      scored.sort((a, b) => b.significance - a.significance);
+
+      // 5. Apply diversity constraint (max MAX_PER_TYPE per type)
+      const typeCounts = {};
+      const selected = [];
+      for (const edge of scored) {
+        if (selected.length >= MAX_DEFINING) break;
+        const count = typeCounts[edge.type] || 0;
+        if (count >= MAX_PER_TYPE) continue;
+        typeCounts[edge.type] = count + 1;
+        selected.push(edge);
+      }
+
+      return selected;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // RENDER SEMANTIC VIEW
+    // ═══════════════════════════════════════════════════════════
+    function renderSemanticView(nodeId) {
+      const nodeData = kokIndex[nodeId];
+      if (!nodeData) return;
+
+      // Gather all edges for stats
+      const allNodeEdges = allEdges.filter(e =>
+        (e.source === nodeId || e.target === nodeId) && e.type !== 'İlişki Yok'
+      );
+
+      // Select defining connections
+      const defining = selectDefiningConnections(nodeId);
+
+      // Group by type
+      const groups = {};
+      defining.forEach(edge => {
+        if (!groups[edge.type]) groups[edge.type] = [];
+        groups[edge.type].push(edge);
+      });
+
+      // Build HTML
+      let html = '';
+
+      // Concept card
+      html += `
+        <div class="concept-card">
+          <div class="arabic">${nodeData.arapca || ''}</div>
+          <div class="root-code">${nodeId}</div>
+          <div class="meanings">${(nodeData.turkce || []).slice(0, 8).join(' · ')}</div>
+          <div class="stats">
+            <div class="stat"><div class="val">${nodeData.frekans || 0}</div><div class="lbl">Frekans</div></div>
+            <div class="stat"><div class="val">${allNodeEdges.length}</div><div class="lbl">Toplam Bağ</div></div>
+            <div class="stat"><div class="val">${defining.length}</div><div class="lbl">Tanımlayıcı</div></div>
+            <div class="stat"><div class="val">${(nodeData.ayetler || []).length}</div><div class="lbl">Ayet</div></div>
+          </div>
+        </div>`;
+
+      // Group sections
+      // Order: Ayrılmaz Bütünlük first, then by type significance
+      const typeOrder = [
+        'Ayrılmaz Bütünlük', 'Şart-Bağımlılık', 'Sebep-Sonuç', 'Eş Anlamlılık',
+        'Zıtlık', 'Sıfat/Niteleme', 'Aksiyon/Eylem', 'Somutlaştırma',
+        'Hiyerarşi (Alt-Üst)', 'Kıssa/Tarih'
+      ];
+
+      typeOrder.forEach(type => {
+        if (!groups[type]) return;
+        const color = EDGE_COLORS[type] || '#4b5563';
+
+        html += `
+          <div class="group-section">
+            <div class="group-title" style="color:${color}">
+              <div class="group-dot" style="background:${color}"></div>
+              ${type}
+            </div>`;
+
+        groups[type].forEach(edge => {
+          const nData = kokIndex[edge.neighborId] || {};
+          const nMeaning = (nData.turkce || []).slice(0, 3).join(', ');
+          const bgColor = color + '22';
+
+          // Find shared ayets (max 3)
+          const nodeAyets = new Set(nodeData.ayetler || []);
+          const neighborAyets = new Set(nData.ayetler || []);
+          const shared = [...nodeAyets].filter(a => neighborAyets.has(a)).slice(0, 3);
+
+          let sharedHTML = '';
+          if (shared.length > 0) {
+            sharedHTML = `<div class="shared-ayets"><div class="label">📖 Ortak Ayetler</div>`;
+            shared.forEach(aid => {
+              const ayet = ayetIndex[aid];
+              if (ayet) {
+                const mealShort = ayet.meal && ayet.meal.length > 100
+                  ? ayet.meal.substring(0, 100) + '...'
+                  : (ayet.meal || '');
+                sharedHTML += `<div class="ayet-chip"><span class="ref">${aid}</span> — ${mealShort}</div>`;
+              }
+            });
+            sharedHTML += `</div>`;
+          }
+
+          html += `
+            <div class="connection-card" style="border-left-color:${color}" onclick="navigateTo('${edge.neighborId}')">
+              <div class="top-row">
+                <span class="neighbor-arabic">${nData.arapca || ''}</span>
+                <span class="neighbor-code">${edge.neighborId}</span>
+                <span class="neighbor-meaning">— ${nMeaning}</span>
+              </div>
+              <div class="reason">${edge.reason || 'Açıklama mevcut değil.'}</div>
+              <div class="meta">
+                <span class="badge" style="background:${bgColor};color:${color}">${edge.type}</span>
+                <span class="score-info">Güven: ${(edge.score * 100).toFixed(0)}% · NPMI: ${edge.npmi ? edge.npmi.toFixed(3) : '—'} · ${edge.raw_count || 0} ortak ayet</span>
+              </div>
+              ${sharedHTML}
+            </div>`;
+        });
+
+        html += `</div>`;
+      });
+
+      // All connections link
+      html += `
+        <div class="all-connections-link">
+          <button onclick="navigateToFull('${nodeId}')">Tüm bağlantılar (${allNodeEdges.length}) →</button>
+        </div>`;
+
+      document.getElementById('reader-content').innerHTML = html;
+
+      // Switch views
+      document.getElementById('landing').classList.add('hidden');
+      document.getElementById('reader').classList.add('active');
+
+      // Scroll to top
+      window.scrollTo(0, 0);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NAVIGATION
+    // ═══════════════════════════════════════════════════════════
+    function navigateTo(nodeId) {
+      navigationHistory.push({ type: 'node', id: nodeId });
+      renderSemanticView(nodeId);
+    }
+
+    function navigateToFull(nodeId) {
+      navigationHistory.push({ type: 'full', id: nodeId });
+      renderFullView(nodeId);
+    }
+
+    function goBack() {
+      if (navigationHistory.length > 1) {
+        navigationHistory.pop(); // remove current state
+        const prev = navigationHistory[navigationHistory.length - 1]; // get previous
+        
+        if (prev.type === 'node') {
+          renderSemanticView(prev.id);
+        } else if (prev.type === 'full') {
+          renderFullView(prev.id);
+        } else if (prev.type === 'journey') {
+          renderJourneyView(prev.path);
+        } else if (prev.type === 'ayet') {
+          renderAyetView(prev.id);
+        }
+      } else {
+        // Go back to landing
+        navigationHistory = [];
+        document.getElementById('reader').classList.remove('active');
+        document.getElementById('landing').classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('reader-back').addEventListener('click', goBack);
+
+    // ═══════════════════════════════════════════════════════════
+    // FULL PANEL (all connections + ayets)
+    // ═══════════════════════════════════════════════════════════
+    function renderFullView(nodeId) {
+      const nodeData = kokIndex[nodeId];
+      if (!nodeData) return;
+
+      const allNodeEdges = allEdges.filter(e =>
+        (e.source === nodeId || e.target === nodeId) && e.type !== 'İlişki Yok'
+      );
+      
+      // Sort edges by score descending
+      allNodeEdges.sort((a,b) => b.score - a.score);
+
+      let html = `
+        <div class="full-view-header">
+          <h2>Tüm Bağlantılar: ${nodeData.arapca} (${nodeId})</h2>
+          <p>${(nodeData.turkce || []).join(' · ')}</p>
+        </div>
+        <div class="group-section">
+          <div class="group-title" style="color:var(--text-secondary)">Toplam ${allNodeEdges.length} Bağlantı bulundu</div>
+      `;
+
+      allNodeEdges.forEach(edge => {
+        const neighborId = edge.source === nodeId ? edge.target : edge.source;
+        const nData = kokIndex[neighborId] || {};
+        const nMeaning = (nData.turkce || []).slice(0, 3).join(', ');
+        const color = EDGE_COLORS[edge.type] || '#4b5563';
+        const bgColor = color + '22';
+
+        html += `
+          <div class="full-connection-item" onclick="navigateTo('${neighborId}')">
+            <div class="arabic">${nData.arapca || ''}</div>
+            <div class="details">
+              <span class="code">${neighborId}</span>
+              <span class="meaning">— ${nMeaning}</span>
+            </div>
+            <div class="badge" style="background:${bgColor};color:${color};font-size:11px;">${edge.type}</div>
+          </div>`;
+      });
+      
+      html += `</div>`;
+
+      // Add Ayets list
+      html += `
+        <div class="group-section" style="margin-top: 40px;">
+          <div class="group-title" style="color:var(--text-secondary)">Geçtiği Ayetler (Örneklem)</div>
+      `;
+      
+      const sampleAyets = (nodeData.ayetler || []).slice(0, 15);
+      if (sampleAyets.length === 0) {
+        html += `<div style="color:var(--text-muted);font-size:14px;">Ayet bulunamadı.</div>`;
+      } else {
+        sampleAyets.forEach(aid => {
+          const ayet = ayetIndex[aid];
+          if (ayet) {
+            html += `
+              <div class="ayet-item">
+                <span class="ayet-ref">${aid} (${ayet.sure || ''})</span><br/>
+                ${ayet.meal || ''}
+              </div>`;
+          }
+        });
+      }
+      
+      html += `</div>`;
+
+      document.getElementById('reader-content').innerHTML = html;
+      window.scrollTo(0, 0);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // JOURNEY PATHFINDING & UI
+    // ═══════════════════════════════════════════════════════════
+    function setAppMode(mode) {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('explore-inputs').style.display = 'none';
+      document.getElementById('journey-inputs').style.display = 'none';
+      document.getElementById('ayet-inputs').style.display = 'none';
+
+      document.getElementById('tab-' + mode).classList.add('active');
+      
+      if (mode === 'explore') {
+        document.getElementById('explore-inputs').style.display = 'block';
+      } else if (mode === 'journey') {
+        document.getElementById('journey-inputs').style.display = 'flex';
+      } else if (mode === 'ayet') {
+        document.getElementById('ayet-inputs').style.display = 'block';
+      }
+    }
+
+    let journeyStartId = null;
+    let journeyEndId = null;
+
+    function checkJourneyBtn() {
+      const btn = document.getElementById('btn-find-path');
+      btn.disabled = !(journeyStartId && journeyEndId && journeyStartId !== journeyEndId);
+    }
+
+    function setupJourneySearch(inputEl, dropdownEl, isStart) {
+      inputEl.addEventListener('input', () => {
+        const query = inputEl.value.trim().toLowerCase();
+        if (query.length < 1) {
+          dropdownEl.style.display = 'none';
+          if (isStart) journeyStartId = null; else journeyEndId = null;
+          checkJourneyBtn();
+          return;
+        }
+
+        const matches = allNodeData.filter(n => {
+          if (n.id.toLowerCase().includes(query)) return true;
+          if (n.turkce.some(t => t.toLowerCase().includes(query))) return true;
+          if (n.allTurkce.some(t => t.toLowerCase().includes(query))) return true;
+          if (n.arapca && n.arapca.includes(query)) return true;
+          return false;
+        }).slice(0, 12);
+
+        if (matches.length === 0) {
+          dropdownEl.innerHTML = '<div class="item" style="color:var(--text-muted)">Sonuç bulunamadı</div>';
+        } else {
+          dropdownEl.innerHTML = matches.map(m =>
+            `<div class="item" data-id="${m.id}" data-label="${m.arapca} (${m.id}) — ${m.turkce[0]}">
+              <span class="code">${m.arapca} (${m.id})</span>
+              <span class="meaning">${m.turkce.join(', ')}</span>
+            </div>`
+          ).join('');
+          
+          dropdownEl.querySelectorAll('.item').forEach(item => {
+            if(!item.dataset.id) return;
+            item.addEventListener('click', function() {
+              inputEl.value = this.dataset.label;
+              dropdownEl.style.display = 'none';
+              if (isStart) journeyStartId = this.dataset.id;
+              else journeyEndId = this.dataset.id;
+              checkJourneyBtn();
+            });
+          });
+        }
+        dropdownEl.style.display = 'block';
+      });
+
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') dropdownEl.style.display = 'none';
+      });
+      document.addEventListener('click', (e) => {
+        if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) dropdownEl.style.display = 'none';
+      });
+    }
+
+    function findPath(startId, endId, maxDepthLimit = 5) {
+      if (startId === endId) return [];
+
+      const adj = {};
+      allEdges.forEach(e => {
+        if (e.type === 'İlişki Yok') return;
+        const sig = calculateSignificance(e);
+        const cost = 1.5 - sig; 
+        
+        if (!adj[e.source]) adj[e.source] = [];
+        adj[e.source].push({ target: e.target, cost, edge: e, sig });
+        
+        if (!adj[e.target]) adj[e.target] = [];
+        adj[e.target].push({ target: e.source, cost, edge: e, sig });
+      });
+
+      const dist = {};
+      const prev = {};
+      const depth = {};
+      const pq = [];
+
+      Object.keys(kokIndex).forEach(id => { dist[id] = Infinity; });
+      dist[startId] = 0;
+      depth[startId] = 0;
+      pq.push({ id: startId, cost: 0 });
+
+      while (pq.length > 0) {
+        pq.sort((a, b) => a.cost - b.cost);
+        const current = pq.shift();
+        const u = current.id;
+
+        if (u === endId) break; 
+        if (depth[u] >= maxDepthLimit) continue;
+        if (!adj[u]) continue;
+
+        for (const neighbor of adj[u]) {
+          const v = neighbor.target;
+          const alt = dist[u] + neighbor.cost;
+          if (alt < dist[v]) {
+            dist[v] = alt;
+            prev[v] = { node: u, edge: neighbor.edge, sig: neighbor.sig };
+            depth[v] = depth[u] + 1;
+            pq.push({ id: v, cost: alt });
+          }
+        }
+      }
+
+      if (dist[endId] === Infinity) return null;
+
+      const path = [];
+      let curr = endId;
+      while (curr !== startId) {
+        const step = prev[curr];
+        path.unshift({ nodeId: curr, edge: step.edge, sig: step.sig });
+        curr = step.node;
+      }
+      path.unshift({ nodeId: startId, edge: null, sig: 0 });
+      return path;
+    }
+
+    function startJourney() {
+      if (!journeyStartId || !journeyEndId) return;
+      
+      const btn = document.getElementById('btn-find-path');
+      const originalText = btn.textContent;
+      btn.textContent = "Hesaplanıyor...";
+      
+      setTimeout(() => {
+        const path = findPath(journeyStartId, journeyEndId);
+        btn.textContent = originalText;
+        
+        if (!path) {
+          alert('Bu iki kavram arasında belirlenen limitlerde kavramsal bir köprü kurulamadı.');
+          return;
+        }
+        
+        navigationHistory.push({ type: 'journey', start: journeyStartId, end: journeyEndId, path: path });
+        renderJourneyView(path);
+      }, 50);
+    }
+
+    function renderJourneyView(path) {
+      let html = `<div class="timeline-container">`;
+      
+      path.forEach((step, index) => {
+        const nodeData = kokIndex[step.nodeId];
+        
+        if (index > 0) {
+          const edge = step.edge;
+          const color = EDGE_COLORS[edge.type] || '#4b5563';
+          html += `
+            <div class="route-edge" style="border-left-color: ${color}">
+              <div class="edge-meta">
+                <span class="badge" style="background:${color}22;color:${color}">${edge.type}</span>
+                <span style="font-size:11px;color:var(--text-muted)">Bağ Gücü: ${(step.sig).toFixed(3)}</span>
+              </div>
+              <div class="reason">${edge.reason || 'AI açıklaması mevcut değil.'}</div>
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="waypoint">
+            <div class="waypoint-dot"></div>
+            <div class="waypoint-card">
+              <div class="info">
+                <div style="color:var(--accent-cyan);font-weight:600;font-size:16px;margin-bottom:4px;">${step.nodeId}</div>
+                <div style="color:var(--text-secondary);font-size:15px;">${(nodeData.turkce || []).slice(0, 3).join(', ')}</div>
+              </div>
+              <div class="arabic">${nodeData.arapca || ''}</div>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += `</div>`;
+      
+      document.getElementById('reader-content').innerHTML = `
+        <div style="margin-bottom:30px; border-bottom:1px solid var(--border-glass); padding-bottom:20px;">
+          <h2 style="color:var(--accent-gold);margin-bottom:8px">Kavramsal Yolculuk</h2>
+          <p style="color:var(--text-secondary);font-size:14px">"${kokIndex[path[0].nodeId].arapca}" kavramından "${kokIndex[path[path.length-1].nodeId].arapca}" kavramına anlamsal köprü.</p>
+        </div>
+        ${html}
+      `;
+      
+      document.getElementById('landing').classList.add('hidden');
+      document.getElementById('reader').classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // AYET SCANNER OVERLAY
+    // ═══════════════════════════════════════════════════════════
+    function setupAyetSearch(inputEl, dropdownEl) {
+      const allAyetEntries = Object.entries(ayetIndex).map(([id, data]) => ({
+        id: id,
+        sure: data.sure || '',
+        meal: data.meal || ''
+      }));
+
+      inputEl.addEventListener('input', () => {
+        const query = inputEl.value.trim().toLowerCase();
+        if (query.length < 1) {
+          dropdownEl.style.display = 'none';
+          return;
+        }
+
+        const matches = allAyetEntries.filter(a => {
+          if (a.id.includes(query)) return true;
+          if (a.sure.toLowerCase().includes(query)) return true;
+          
+          const parts = query.split(' ');
+          if (parts.length > 1) {
+            const sureMatch = a.sure.toLowerCase().includes(parts[0]);
+            const numMatch = a.id.split(':')[1] === parts[1];
+            if (sureMatch && numMatch) return true;
+          }
+          return false;
+        }).slice(0, 15);
+
+        if (matches.length === 0) {
+          dropdownEl.innerHTML = '<div class="item" style="color:var(--text-muted)">Sonuç bulunamadı</div>';
+        } else {
+          dropdownEl.innerHTML = matches.map(m => {
+            const mText = m.meal.length > 60 ? m.meal.substring(0, 60) + '...' : m.meal;
+            return `<div class="item" onclick="navigateToAyet('${m.id}')">
+              <span class="code" style="color:var(--accent-gold)">${m.id} - ${m.sure}</span>
+              <span class="meaning" style="font-size:12px">${mText}</span>
+            </div>`;
+          }).join('');
+        }
+        dropdownEl.style.display = 'block';
+      });
+
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') dropdownEl.style.display = 'none';
+      });
+      document.addEventListener('click', (e) => {
+        if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) dropdownEl.style.display = 'none';
+      });
+    }
+
+    function navigateToAyet(ayetId) {
+      document.getElementById('ayet-dropdown').style.display = 'none';
+      document.getElementById('ayet-search-input').value = '';
+      navigationHistory.push({ type: 'ayet', id: ayetId });
+      renderAyetView(ayetId);
+    }
+
+    function renderAyetView(ayetId) {
+      const ayetData = ayetIndex[ayetId];
+      if (!ayetData) return;
+
+      const verseRoots = [];
+      const rootDetails = [];
+      Object.entries(kokIndex).forEach(([kId, kData]) => {
+        if (kData.ayetler && kData.ayetler.includes(ayetId)) {
+          verseRoots.push(kId);
+          rootDetails.push({ id: kId, data: kData });
+        }
+      });
+
+      let html = `
+        <div class="full-view-header" style="border-bottom:none; margin-bottom:0;">
+          <div style="color:var(--accent-gold); font-size:16px; font-weight:700; margin-bottom:12px;">${ayetId} — ${ayetData.sure} Suresi</div>
+          <div style="font-size:17px; line-height:1.6; color:var(--text-primary); margin-bottom: 24px;">"${ayetData.meal}"</div>
+        </div>
+        
+        <div class="group-section">
+          <div class="group-title" style="color:var(--text-secondary)">Ayetin Semantik Açılımı (${verseRoots.length} Kök)</div>
+          <div style="color:var(--text-muted); font-size:14px; margin-bottom:20px;">
+            Aşağıda bu ayette geçen her bir kelime kökünün Kur'an genelinde en çok etkileşime girdiği <strong>ilk 3 semantik çekim alanı</strong> listelenmiştir.
+          </div>
+        </div>`;
+
+      rootDetails.forEach(rd => {
+        let globalEdges = allEdges.filter(e => (e.source === rd.id || e.target === rd.id) && e.type !== 'İlişki Yok');
+        globalEdges.forEach(e => e._sig = calculateSignificance(e));
+        globalEdges.sort((a, b) => b._sig - a._sig);
+        let topEdges = globalEdges.slice(0, 3);
+        
+        let turkceMeanings = (rd.data.turkce || []).slice(0,3).join(", ");
+
+        html += `
+        <div class="connection-card" style="margin-bottom: 16px; border-left-color: var(--accent-cyan); background:rgba(255,255,255,0.02);">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-glass); padding-bottom:12px; margin-bottom:12px;">
+            <div>
+               <span style="color:var(--accent-cyan); font-weight:700; font-size:20px; margin-right:8px;">${rd.data.arapca || ''}</span> 
+               <span style="font-weight:600; color:#fff; font-size:16px; margin-right:8px;">${rd.id}</span>
+               <span style="color:var(--text-muted); font-size:14px;">(${turkceMeanings})</span>
+            </div>
+            <div onclick="navigateTo('${rd.id}')" style="cursor:pointer; font-size:12px; padding:6px 14px; background:rgba(6, 182, 212, 0.1); color:var(--accent-cyan); border-radius:20px; font-weight:600; transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.2)'" onmouseout="this.style.background='rgba(6,182,212,0.1)'">Köke Git →</div>
+          </div>`;
+
+        if (topEdges.length === 0) {
+           html += `<div style="color:var(--text-muted); font-size:13px; font-style:italic;">Bu kavram için Kur'an genelinde kayıtlı evrensel bir makro-bağ tespit edilemedi.</div>`;
+        } else {
+           html += `<div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">Kur'an'daki En Güçlü Çekim Alanları:</div>`;
+           html += `<div style="display:flex; flex-direction:column; gap:8px;">`;
+           topEdges.forEach(edge => {
+             const isSource = edge.source === rd.id;
+             const targetId = isSource ? edge.target : edge.source;
+             const tData = kokIndex[targetId] || {};
+             const color = EDGE_COLORS[edge.type] || '#4b5563';
+             
+             html += `
+               <div style="background:rgba(0,0,0,0.2); border-radius:6px; padding:10px; border-left:3px solid ${color};">
+                 <div style="display:flex; justify-content:space-between; margin-bottom:6px; align-items:center;">
+                   <div>
+                     <span style="color:var(--text-muted); margin-right:6px; font-size:12px;">↔</span>
+                     <span style="color:#fff; font-weight:600; cursor:pointer;" onclick="navigateTo('${targetId}')" onmouseover="this.style.color='var(--accent-cyan)'" onmouseout="this.style.color='#fff'">${tData.arapca||''} ${targetId}</span>
+                     <span style="color:var(--text-muted); font-size:13px; margin-left:6px;">(${(tData.turkce||[])[0]||''})</span>
+                   </div>
+                   <span class="badge" style="background:${color}22;color:${color}; border-color:${color}; padding:2px 8px; font-size:11px;">${edge.type}</span>
+                 </div>
+                 <div style="color:var(--text-primary); font-size:13px; line-height:1.5;">${edge.reason || 'AI açıklaması mevcut değil.'}</div>
+               </div>`;
+           });
+           html += `</div>`;
+        }
+        
+        html += `</div>`;
+      });
+
+      document.getElementById('reader-content').innerHTML = html;
+      document.getElementById('landing').classList.add('hidden');
+      document.getElementById('reader').classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // SEARCH
+    // ═══════════════════════════════════════════════════════════
+    function setupSearch(inputEl, dropdownEl) {
+      inputEl.addEventListener('input', () => {
+        const query = inputEl.value.trim().toLowerCase();
+        if (query.length < 1) {
+          dropdownEl.style.display = 'none';
+          return;
+        }
+
+        const matches = allNodeData.filter(n => {
+          if (n.id.toLowerCase().includes(query)) return true;
+          if (n.turkce.some(t => t.toLowerCase().includes(query))) return true;
+          if (n.allTurkce.some(t => t.toLowerCase().includes(query))) return true;
+          if (n.arapca && n.arapca.includes(query)) return true;
+          return false;
+        }).slice(0, 12);
+
+        if (matches.length === 0) {
+          dropdownEl.innerHTML = '<div class="item" style="color:var(--text-muted)">Sonuç bulunamadı</div>';
+        } else {
+          dropdownEl.innerHTML = matches.map(m =>
+            `<div class="item" onclick="navigateTo('${m.id}');this.parentElement.style.display='none';this.parentElement.previousElementSibling.previousElementSibling.value='';">
+              <span class="code">${m.arapca} (${m.id})</span>
+              <span class="meaning">${m.turkce.join(', ')}</span>
+            </div>`
+          ).join('');
+        }
+        dropdownEl.style.display = 'block';
+      });
+
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          dropdownEl.style.display = 'none';
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // INITIALIZATION
+    // ═══════════════════════════════════════════════════════════
+    (async function init() {
+      try {
+        await loadAllData();
+
+        // Setup search for both landing and reader
+        setupSearch(
+          document.getElementById('search-input'),
+          document.getElementById('search-dropdown')
+        );
+        setupSearch(
+          document.getElementById('reader-search-input'),
+          document.getElementById('reader-search-dropdown')
+        );
+        
+        // Setup journey search inputs
+        setupJourneySearch(
+          document.getElementById('journey-start'),
+          document.getElementById('dropdown-start'),
+          true
+        );
+        setupJourneySearch(
+          document.getElementById('journey-end'),
+          document.getElementById('dropdown-end'),
+          false
+        );
+
+        // Setup Ayet Search
+        setupAyetSearch(
+          document.getElementById('ayet-search-input'),
+          document.getElementById('ayet-dropdown')
+        );
+
+        setTimeout(() => {
+          document.getElementById('loading-overlay').classList.add('hidden');
+        }, 500);
+      } catch (err) {
+        console.error('Yükleme hatası:', err);
+        document.getElementById('loading-text').textContent = 'Hata: ' + err.message;
+      }
+    })();
+  </script>
+</body>
+
+</html>
