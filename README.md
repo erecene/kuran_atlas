@@ -1,7 +1,5 @@
 # Kur'an Kavram Atlası (Quran Concept Atlas)
 
-🌍 **[Türkçe](#türkçe-açıklama) | [English](#english-description)**
-
 ---
 
 ## Türkçe Açıklama
