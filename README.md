@@ -32,35 +32,7 @@ Daha detaylı bilgi için: `işleyis.md` belgesini okuyabilirsiniz.
 ### Kurulum ve Çalıştırma
 Sistemi bilgisayarınızda kendi başınıza nasıl çok kolay bir şekilde çalıştırabileceğinizi öğrenmek için lütfen [KURULUM.md](KURULUM.md) dosyasına göz atın.
 
----
 
-## English Description
-
-**Quran Concept Atlas** is an interactive semantic navigation tool that maps, analyzes, and visualizes the semantic, conceptual, and theological relationships between 1500 unique word roots in the Quran using artificial intelligence and network theory.
-
-Moving beyond simple word searches, this project leverages the power of the Google Gemini-27B large language model to analyze whether Quranic words are connected through antonymy, cause-and-effect, conditional dependency, or inseparable unity.
-
-### Key Features (Modes)
-
-1. **Semantic Explorer (Concept View)**
-   - Discover the position of any desired concept (e.g., `rhm` - mercy) within the Quranic spatial matrix.
-   - List the most strictly correlated concepts alongside an "AI Logic Reason" and "Semantic Correlation Score".
-   - Validate the system's findings through verses where the words co-occur.
-
-2. **Conceptual Journeys (Dijkstra Pathfinding)**
-   - Explore how to navigate between two seemingly unrelated words (e.g., "Angel" and "Fire") using the Quran's own semantic bridges.
-   - The system utilizes `Dijkstra's Shortest Path` algorithm in the background to calculate and render the shortest semantic route between concepts on a vertical Timeline.
-
-3. **Verse Scanner (Verse View)**
-   - Focus down onto a specific verse (e.g., 2:255 / Al-Baqarah 255).
-   - The engine reverse-engineers all the functional roots within that specific verse and isolates only the macro-theological bonds (Micro Semantic Analysis) occurring uniquely among those specific root words.
-
-### Data & Architecture (10-Layer Pipeline)
-This system is not a chatbot that pings an API on the fly. All lexical and semantic data has been pre-processed, mathematically verified, and embedded into the Frontend via a complex **10-Layer** Big Data mining pipeline, ensuring zero-latency (0ms) execution directly in the browser.
-For a deeper dive into the architecture, please read the `işleyis.md` document (Available in Turkish).
-
-### Running Locally
-To learn how to easily run this system on your own machine, please check the [KURULUM.md](KURULUM.md) file (Available in Turkish).
 
 ---
 
