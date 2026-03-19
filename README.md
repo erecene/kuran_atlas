@@ -1,12 +1,10 @@
-# Kur'an Kavram Atlası (Quran Concept Atlas)
+# Kur'an Kavram Atlası 
 
 ---
 
-## Türkçe Açıklama
-
 **Kur'an Kavram Atlası**, Kur'an-ı Kerim'deki 1500 benzersiz kelime kökünün birbirleriyle olan anlamsal, kavramsal ve teolojik ilişkilerini yapay zeka ve ağ teorisi (network theory) kullanarak eşleyen, analiz eden ve son kullanıcıya sunan interaktif bir semantik navigasyon aracıdır.
 
-Proje, düz bir kelime aramasının ötesine geçerek; Kur'an kelimelerinin hangi zıtlık, sebep-sonuç, şart-bağımlılık veya ayrılmaz bütünlük ilişkisiyle birbirine bağlandığını Google Gemini-27B dil modelinin gücüyle analiz eder.
+Proje, düz bir kelime aramasının ötesine geçerek; Kur'an kelimelerinin hangi zıtlık, sebep-sonuç, şart-bağımlılık veya ayrılmaz bütünlük ilişkisiyle birbirine bağlandığını Gemma-27B dil modeliyle analiz eder.
 
 ### Temel Özellikler (Modlar)
 
