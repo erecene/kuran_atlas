@@ -1,5 +1,9 @@
 # Kur'an Kavram Atlası 
 
+
+## Direkt Deneyimlemek için link https://erecene.github.io/kuran_atlas/index.html
+
+### Eğer ne olduğunu merak ediyorsan okumaya devam et!
 ---
 
 **Kur'an Kavram Atlası**, Kur'an-ı Kerim'deki 1500 benzersiz kelime kökünün birbirleriyle olan anlamsal, kavramsal ve teolojik ilişkilerini yapay zeka ve ağ teorisi (network theory) kullanarak eşleyen, analiz eden ve son kullanıcıya sunan interaktif bir semantik navigasyon aracıdır.
